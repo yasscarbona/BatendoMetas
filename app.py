@@ -8,13 +8,13 @@ import os
 #Criar de fato a nossa aplicação
 app = Flask(__name__)
 #Definindo o nome da planilha excel
-ARQUIVO = 'vendas.xlsx'
+ARQUIVO = 'turma.xlsx'
 
 if not os.path.exists(ARQUIVO):
     wb = Workbook()#CRIANDO UM ARQ. EXCEL
     ws = wb.active #Selecionando um plano. ativa do projeto
 #Criando um cabeçalho para a planilha
-    ws.append(["Nome","Vendas","Metas"])
+    ws.append(["Nome","Media","Situacao"])
 #salvando o arquivo
     wb.save(ARQUIVO)
 
@@ -34,15 +34,16 @@ def salvar():
     nome = request.form['nome']
 #CAPTURA A INFO. DA CX. FAÇA O FORMULÁRIO. CONVERTE PARA FLOAT E ATRIBUI À
 #VARIÁVEL
-    vendas = float(request.form['vendas'])
-    meta = float(request.form['meta'])
+    nota01 = float(request.form['nota01'])
+    nota02 = float(request.form['nota02'])
 #ABRINDO O ARQUIVO EXCEL
     wb = load_workbook(ARQUIVO)
 #SELECIONANDO A PLANILHA ATIVA - 1ª ABA Por padrão
     ws = wb.active
-
-#Adiciona uma nova linha como lista com as informações do formulário
-    ws.append([nome,vendas,meta])
+# Tem de ter o calculo da media e o if para a situação
+    media = round((nota01 + nota02) /2,2)
+    situacao = "Aprovado" if media >= 6 else "Reprovado!"
+    ws.append([nome,nota01, nota02, media,situacao])
 
 #Salvando o arquivo excel
     wb.save(ARQUIVO)
@@ -63,7 +64,7 @@ def analisar():
 #(Pois a 1ª linha é cabeçalho) valores_only retorna apenas os valores
 #da linha em
     for linha in ws.iter_rows(min_row=2, values_only=True):
-        nome, vendas, meta = linha
+        nome,nota01,nota02, media,situacao = linha
     # a linha sempre recebe três valores, ex:
     # linha = ('Ana', 45, 50) na linha de código acima, estamos
     # atribuindo cada elemento da linha a uma variável na sequencia
@@ -72,15 +73,12 @@ def analisar():
 
     #Verifique se o nome atual da linha é o mesmo enviado na URL
         if nome == nome_param:
-            meta_batida = (vendas >= meta)
-        #Se a meta for batida bônus recebe o resultado do cálculo de
-        # 15% do valor da venda, caso contrário receberá 0
-            bonus = round(vendas * 0.15, 2) if meta_batida else 0
+            media = round((nota01 + nota02)/2,2)
+            situacao = "Aprovado" if media >= 6 else "Reprovado!"
         #Exibir a tela resultante com as informações dos cálculos
             return render_template('resultado.html',
-            nome = nome,meta_batida = meta_batida,
-            bonus = bonus)
-    return "Funcionário não encontrado"
+            nome=nome,media=media,situacao=situacao)
+    return "Aluno não encontrado"
 
 #Rota que mostra a pág. do histórico de todos os funcionários cadastrados
 @app.route('/historico')
